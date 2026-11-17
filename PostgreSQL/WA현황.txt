@@ -1,0 +1,132 @@
+--XID 생성 속도 (시간별로 실행)
+SELECT
+    txid_current() AS current_xid,
+    age(datfrozenxid) AS xid_age
+FROM pg_database
+WHERE datname = current_database();
+
+ㅁ 8/20 14:00
+ current_xid |  xid_age
+-------------+-----------
+  3655768460 | 199968351
+(1 row)
+
+ㅁ 8/20 15:00
+ current_xid |  xid_age
+-------------+-----------
+  3656210409 | 199451230
+(1 row)
+
+ㅁ 1시간 사이에
+XID 증가       +441,949
+xid_age 감소   -517,121
+autovacuum_freeze_max_age = 200M이기 때문에
+0
+│
+│  일반 VACUUM
+│
+100M ─────────────── ← 여기까지 반드시 내려주는 구조가 아님
+│
+│
+150M
+│
+190M ─── autovacuum FREEZE가 적극적으로 필요해지는 구간
+│
+200M ─── freeze_max_age
+
+
+
+-- db별 wraparound
+SELECT
+    datname,
+    age(datfrozenxid) AS xid_age,
+    ROUND(
+        age(datfrozenxid)::numeric /
+        current_setting('autovacuum_freeze_max_age')::numeric * 100,
+        2
+    ) AS usage_pct
+FROM pg_database
+ORDER BY age(datfrozenxid) DESC;
+
+ㅁ 8/20 14:00
+  datname  |  xid_age  | freeze_max_age | usage_pct
+-----------+-----------+----------------+-----------
+ ezwel     | 199740175 |      200000000 |     99.87
+ postgres  | 195447974 |      200000000 |     97.72
+ template0 | 195447974 |      200000000 |     97.72
+ rdsadmin  | 195447974 |      200000000 |     97.72
+ template1 | 195447974 |      200000000 |     97.72
+(5 rows)
+
+ㅁ 8/20 15:00
+  datname  |  xid_age  | usage_pct
+-----------+-----------+-----------
+ ezwel     | 199500000 |     99.75
+ postgres  | 196243187 |     98.12
+ template0 | 196243187 |     98.12
+ rdsadmin  | 196243187 |     98.12
+ template1 | 196243187 |     98.12
+(5 rows)
+
+
+-- table별 wraparound
+SELECT
+     n.nspname AS schema_name,
+     c.relname AS table_name,
+     age(c.relfrozenxid) AS xid_age,
+     pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
+     c.reltuples::bigint AS estimated_rows
+ FROM pg_class c
+ JOIN pg_namespace n
+     ON n.oid = c.relnamespace
+ WHERE c.relkind IN ('r','m')
+ ORDER BY age(c.relfrozenxid) DESC
+ LIMIT 3;
+
+ㅁ 8/20 14:00
+ schema_name |              table_name               |  xid_age  | total_size | estimated_rows
+-------------+---------------------------------------+-----------+------------+----------------
+ ez_pd       | pd_book_gds_autr_d                    | 199825272 | 146 MB     |         784422
+ ez_pm       | pm_cpn_use_d                          | 199748954 | 3047 MB    |        7523795
+ ew_health   | ez_medi_order                         | 199509686 | 23 MB      |         137655
+(3 rows)
+
+ㅁ 8/20 15:00
+ schema_name |    table_name     |  xid_age  | total_size | estimated_rows
+-------------+-------------------+-----------+------------+----------------
+ ew_health   | ez_medi_user_memo | 199528459 | 9408 kB    |          51906
+ ez_market   | mk_user_b2c_hist  | 199184663 | 144 MB     |         214886
+ ez_cm       | bb_gds_inq_b      | 199109920 | 1475 MB    |        2404382
+(3 rows)
+
+
+-- 구간별 table개수
+SELECT
+     max(age(c.relfrozenxid)) AS max_xid_age,
+     avg(age(c.relfrozenxid))::bigint AS avg_xid_age,
+     count(*) FILTER (WHERE age(c.relfrozenxid) >= 190000000) AS over_190m,
+     count(*) FILTER (WHERE age(c.relfrozenxid) >= 195000000) AS over_195m,
+     count(*) FILTER (WHERE age(c.relfrozenxid) >= 199000000) AS over_199m
+ FROM pg_class c
+ WHERE c.relkind IN ('r','m');
+
+ㅁ 8/20 14:00
+ max_xid_age | avg_xid_age | over_190m | over_195m | over_199m
+-------------+-------------+-----------+-----------+-----------
+   199997351 |   106197912 |      1182 |       181 |         4
+(1 row)
+
+ㅁ 8/20 15:00
+ max_xid_age | avg_xid_age | over_190m | over_195m | over_199m
+-------------+-------------+-----------+-----------+-----------
+   199532481 |   106610593 |      1179 |       181 |         3
+(1 row)
+
+
+-- 정기점검때(필요시)
+VACUUM (FREEZE, VERBOSE) ew_health.ez_medi_order;
+VACUUM (FREEZE, VERBOSE) ew_health.ez_ec_order;
+...
+
+
+

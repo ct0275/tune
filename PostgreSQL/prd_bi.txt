@@ -1,0 +1,45 @@
+> select usename, usesuper, valuntil from pg_user where usename !~* '^rds' order by 1
+
+
+usename      |usesuper|valuntil|
+-------------+--------+--------+
+ez_bi_app    |false   |        |
+ez_bi_own    |false   |        |
+ez_bi_sel    |false   |        |
+ez_ods_own   |false   |        |
+ezweldba     |false   |infinity|
+hcon_bi      |false   |        |
+whatap       |false   |        |
+zdba_20081041|false   |        |
+zdba_20101033|false   |infinity|
+zdba_2616591 |false   |        |
+zdba_msp11141|false   |        |
+zdev_20111077|false   |infinity|
+zdev_20121025|false   |infinity|
+zdev_20151022|false   |infinity|
+zdev_20161073|false   |infinity|
+zdev_20181010|false   |infinity|
+zdev_20181058|false   |infinity|
+zdev_20191074|false   |infinity|
+zdev_20201024|false   |infinity|
+zdev_20201032|false   |infinity|
+zdev_20211042|false   |infinity|
+zdev_20211066|false   |infinity|
+zdev_2210755 |false   |infinity|
+zdev_2221112 |false   |infinity|
+zdev_2244581 |false   |infinity|
+zdev_2244931 |false   |infinity|
+zdev_2249189 |false   |infinity|
+zdev_2318102 |false   |infinity|
+zdev_2331941 |false   |infinity|
+zdev_2400621 |false   |infinity|
+zdev_2412757 |false   |infinity|
+zdev_2412760 |false   |infinity|
+zdev_2421930 |false   |infinity|
+zdev_2501452 |false   |infinity|
+zdev_2501465 |false   |infinity|
+zdev_2510297 |false   |infinity|
+zdev_2510306 |false   |infinity|
+zdev_2522041 |false   |infinity|
+
+38 row(s) fetched.

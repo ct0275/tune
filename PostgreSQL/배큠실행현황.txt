@@ -1,0 +1,16 @@
+[PRD] ezweladm@ezwel> SELECT
+ezwel->     pid,
+ezwel->     datname,
+ezwel->     relid::regclass AS table_name,
+ezwel->     phase,
+ezwel->     heap_blks_total,
+ezwel->     heap_blks_scanned,
+ezwel->     heap_blks_vacuumed
+ezwel-> FROM pg_stat_progress_vacuum
+ezwel-> ORDER BY pid;
+  pid  | datname |    table_name     |     phase     | heap_blks_total | heap_blks_scanned | heap_blks_vacuumed
+-------+---------+-------------------+---------------+-----------------+-------------------+--------------------
+ 19664 | ezwel   | if_meta_comm_code | scanning heap |            2040 |               246 |                  0
+(1 row)
+
+[PRD] ezweladm@ezwel>
